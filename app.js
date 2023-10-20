@@ -17,11 +17,15 @@ app.get("/api/generos/:genero", async (req, res) => {
     res.send(await Genero.find({genero: req.params.genero}));
 })
 
+app.get("/api/canciones", async(req,res)=>{
+    res.send(await Cancion.find());
+})
+
 app.post("/api/generos", async (req, res) => {
     const genero = new Genero(req.body);
     try{
-        await genero.save()
-        res.status(201).json({ mensaje: 'Género agregado con éxito' });
+        let agregado = await genero.save()
+        res.status(201).json(agregado);
     } catch (error){
         console.error(error);
         res.status(500).json({ mensaje: 'Error al agregar el género' });
@@ -30,11 +34,23 @@ app.post("/api/generos", async (req, res) => {
 });
 
 
-app.put("/api/generos/:genero", async (req, res) => {
-    await Genero.updateOne({genero: req.params.genero}, {genero: req.body.genero});
-    res.send(await Genero.find({genero: req.body.genero}));
+app.put("/api/generos/:generoAnterior", async (req, res) => {
+    await Genero.updateOne({genero: req.params.generoAnterior}, {genero: req.body.nuevoGenero});
+    res.send(await Genero.find({genero: req.body.generoNuevo}));
 
 })
+
+app.put("/api/canciones/:cancion", async (req, res) => {
+    let nombre = req.params.cancion;
+    if (req.body.artista != null) await Cancion.updateOne({nombre: req.params.cancion}, {artista: req.body.artista});
+    if (req.body.album != null) await Cancion.updateOne({nombre: req.params.cancion}, {album: req.body.album});
+    if (req.body.rating != null) await Cancion.updateOne({nombre: req.params.cancion}, {rating: req.body.rating});
+    if (req.body.nombre != null) {
+        nombre = await Cancion.updateOne({nombre: req.params.cancion}, {artista: req.body.nombre});
+    }
+    res.send(await Cancion.find({nombre: nombre}));
+
+});
 
 
 app.post("/api/generos/:genero", async (req, res) => {
@@ -49,8 +65,8 @@ app.post("/api/generos/:genero", async (req, res) => {
 app.post("/api/canciones", async (req, res) => {
     const cancion = new Cancion(req.body);
     try {
-        await cancion.save();
-        res.status(201).json({ mensaje: 'Cancion agregada con éxito' });
+        let agregada = await cancion.save();
+        res.status(201).json(agregada);
     } catch (error) {
         console.error(error);
         res.status(500).json({ mensaje: 'Error al agregar la canción' });
@@ -58,11 +74,14 @@ app.post("/api/canciones", async (req, res) => {
 })
 
 app.delete("/api/generos/:genero/canciones", async (req, res) => {
-    await Genero.updateOne({genero: req.params.genero}, {$pull: {nombre: req.body.nombre}});
-    res.send(await Genero.find());
+    await Genero.updateOne({genero: req.params.genero}, {$pull: {canciones: {nombre: req.body.nombre}}});
+    res.send(await Genero.find({genero: req.params.genero}));
 })
 
-//TODO delete generos
+app.delete("/api/generos/:genero", async(req,res)=>{
+    let borrado = await Genero.findOneAndDelete({genero: req.params.genero});;
+    res.send(borrado);
+})
 
 
 app.listen(port, () => {
